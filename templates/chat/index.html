@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Chat with {{ receiver.username }}</h1>
+    <div id="chat-messages">
+        {% for message in messages %}
+            <p><strong>{{ message.sender.username }}:</strong> {{ message.message }}</p>
+        {% endfor %}
+    </div>
+    <form id="chat-form" method="post">  <!-- Ensure the form has method="post" -->
+        {% csrf_token %}
+        <input type="text" id="message-input" />
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value;
+            if (message.trim() !== '') {
+                fetch(`/chat/{{ receiver.username }}/send/`, {  <!-- Fix the URL to pass the correct username -->
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({ message: message }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.status === 'success') {
+                            chatMessages.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+                            messageInput.value = '';
+                        }
+                    });
+            }
+        });
+    </script>
+{% endblock %}
